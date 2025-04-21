@@ -42,10 +42,7 @@ func (rl *RateLimiter) Allow(r *http.Request) bool {
 func (rl *RateLimiter) extractToken(r *http.Request) string {
 	authHeader := r.Header.Get(apiKeyHeader)
 	if authHeader != "" {
-		parts := strings.SplitN(authHeader, ": ", 2)
-		if len(parts) == 2 && parts[0] == apiKeyHeader {
-			return parts[1]
-		}
+		return authHeader
 	}
 	return ""
 }
@@ -78,13 +75,15 @@ func (rl *RateLimiter) allowByIP(ipAddress string) bool {
 
 	count, err := rl.strategy.Increment(key)
 	if err != nil {
-		fmt.Printf("Error incrementing counter for IP %s: %v\n", ipAddress, err)
+		fmt.Printf("Error incrementing counter for IP %s, Key: %v: %v\n", ipAddress, key, err)
 		return true // Allow request on error
 	}
 
 	if count > rl.config.MaxRequestsPerSecondIP {
 		blockUntil := now.Add(rl.config.BlockDurationIP)
 		rl.strategy.Set(key, persistence.RateLimitData{Count: count, BlockedUntil: blockUntil}, rl.config.BlockDurationIP)
+		persistence.Count = 0
+		persistence.Key = ""
 		return false // Exceeded limit, block IP
 	}
 
@@ -112,13 +111,15 @@ func (rl *RateLimiter) allowByToken(token string) bool {
 
 	count, err := rl.strategy.Increment(key)
 	if err != nil {
-		fmt.Printf("Error incrementing counter for token %s: %v\n", token, err)
+		fmt.Printf("Error incrementing counter for token %s, Key: %v: %v\n", token, key, err)
 		return true // Allow request on error
 	}
 
 	if count > rl.config.MaxRequestsPerSecondToken {
 		blockUntil := now.Add(rl.config.BlockDurationToken)
 		rl.strategy.Set(key, persistence.RateLimitData{Count: count, BlockedUntil: blockUntil}, rl.config.BlockDurationToken)
+		persistence.Count = 0
+		persistence.Key = ""
 		return false // Exceeded limit, block token
 	}
 

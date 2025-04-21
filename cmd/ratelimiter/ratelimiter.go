@@ -1,4 +1,4 @@
-package ratelimiter
+package main
 
 import (
 	"fmt"
@@ -11,11 +11,11 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+	fmt.Fprintf(w, "Hi there, it's me!")
 }
 
 func main() {
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfig("../../.")
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		return
@@ -30,8 +30,8 @@ func main() {
 	rateLimiter := limiter.NewRateLimiter(cfg, redisStrategy)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
 
-	http.Handle("/", rateLimitMiddleware.Handler(http.HandlerFunc(handler)))
+	http.Handle("/hi", rateLimitMiddleware.Handler(http.HandlerFunc(handler)))
 
 	fmt.Println("Server listening on port 8080...")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", rateLimitMiddleware.Handler(http.HandlerFunc(handler)))
 }

@@ -13,6 +13,12 @@ type RedisStrategy struct {
 	client *redis.Client
 }
 
+var (
+	Count int
+	Key   string
+	t     = time.Now()
+)
+
 func NewRedisStrategy(address, password string) (*RedisStrategy, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -29,8 +35,22 @@ func NewRedisStrategy(address, password string) (*RedisStrategy, error) {
 }
 
 func (r *RedisStrategy) Increment(key string) (int, error) {
-	result, err := r.client.Incr(context.Background(), key).Result()
-	return int(result), err
+	taux := time.Now()
+	if taux.Sub(t) >= time.Second {
+		t = taux
+		Count = 0
+	}
+	if Key == "" {
+		Key = key
+		Count = 0
+	}
+	if key == Key {
+		Count++
+	} else {
+		Count = 0
+		Key = key
+	}
+	return Count, nil
 }
 
 func (r *RedisStrategy) Get(key string) (*RateLimitData, error) {

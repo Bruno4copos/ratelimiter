@@ -1,57 +1,83 @@
 package config
 
 import (
-	"os"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	MaxRequestsPerSecondIP    int
-	MaxRequestsPerSecondToken int
-	BlockDurationIP           time.Duration
-	BlockDurationToken        time.Duration
-	RedisAddress              string
-	RedisPassword             string
+	MaxRequestsPerSecondIP    int           `mapstructure:"MAX_REQUESTS_PER_SECOND_IP"`
+	MaxRequestsPerSecondToken int           `mapstructure:"MAX_REQUESTS_PER_SECOND_TOKEN"`
+	WebServerPort             int           `mapstructure:"WEB_SERVER_PORT"`
+	BlockDurationIP           time.Duration `mapstructure:"BLOCK_DURATION_IP"`
+	BlockDurationToken        time.Duration `mapstructure:"BLOCK_DURATION_TOKEN"`
+	RedisAddress              string        `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword             string        `mapstructure:"REDIS_PASSWORD"`
+	Tokens                    string        `mapstructure:"TOKENS"`
+	TokensMap                 map[string]Token
 }
 
-func LoadConfig() (*Config, error) {
+type Token struct {
+	RateLimit    int
+	RateInterval int
+}
+
+func LoadConfig(path string) (*Config, error) {
+
+	var (
+		config = &Config{} // environment variables saved in the .env file
+		err    error
+	)
 	viper.SetDefault("MAX_REQUESTS_PER_SECOND_IP", 5)
 	viper.SetDefault("MAX_REQUESTS_PER_SECOND_TOKEN", 100)
-	viper.SetDefault("BLOCK_DURATION_IP", "5m")
-	viper.SetDefault("BLOCK_DURATION_TOKEN", "1h")
+	viper.SetDefault("BLOCK_DURATION_IP", "60s")
+	viper.SetDefault("BLOCK_DURATION_TOKEN", "60s")
 	viper.SetDefault("REDIS_ADDRESS", "localhost:6379")
 	viper.SetDefault("REDIS_PASSWORD", "")
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(path)
 	viper.AutomaticEnv()
 
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, err
 		}
 		// .env file not found, using default values
 	}
 
-	config := &Config{
-		MaxRequestsPerSecondIP:    viper.GetInt("MAX_REQUESTS_PER_SECOND_IP"),
-		MaxRequestsPerSecondToken: viper.GetInt("MAX_REQUESTS_PER_SECOND_TOKEN"),
-		RedisAddress:              viper.GetString("REDIS_ADDRESS"),
-		RedisPassword:             viper.GetString("REDIS_PASSWORD"),
-	}
-
-	blockDurationIPStr := viper.GetString("BLOCK_DURATION_IP")
-	config.BlockDurationIP, err = time.ParseDuration(blockDurationIPStr)
-	if err != nil {
+	if err := viper.Unmarshal(&config); err != nil {
 		return nil, err
 	}
 
-	blockDurationTokenStr := viper.GetString("BLOCK_DURATION_TOKEN")
-	config.BlockDurationToken, err = time.ParseDuration(blockDurationTokenStr)
+	// config = &Config{
+	// 	MaxRequestsPerSecondIP:    viper.GetInt("MAX_REQUESTS_PER_SECOND_IP"),
+	// 	MaxRequestsPerSecondToken: viper.GetInt("MAX_REQUESTS_PER_SECOND_TOKEN"),
+	// 	RedisAddress:              viper.GetString("REDIS_ADDRESS"),
+	// 	RedisPassword:             viper.GetString("REDIS_PASSWORD"),
+	// 	WebServerPort:             viper.GetInt("WEB_SERVER_PORT"),
+	// 	Tokens:                    viper.GetString("TOKENS"),
+	// }
+
+	// blockDurationIPStr = viper.GetString("BLOCK_DURATION_IP")
+	// config.BlockDurationIP, err = time.ParseDuration(blockDurationIPStr)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// blockDurationTokenStr = viper.GetString("BLOCK_DURATION_TOKEN")
+	// config.BlockDurationToken, err = time.ParseDuration(blockDurationTokenStr)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	config.TokensMap, err = parseTokens(config.Tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -59,22 +85,39 @@ func LoadConfig() (*Config, error) {
 	return config, nil
 }
 
-func GetEnv(key string, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
-}
+func parseTokens(tokensString string) (map[string]Token, error) {
 
-func GetEnvInt(key string, defaultValue int) int {
-	valueStr := os.Getenv(key)
-	if valueStr == "" {
-		return defaultValue
+	var (
+		tokens                  map[string]Token
+		pairs, kv, values       []string
+		pair                    string
+		rateLimit, rateInterval int
+		err                     error
+	)
+	tokens = make(map[string]Token)
+	fmt.Printf("TOKEN: %v\n", tokensString)
+	pairs = strings.Split(tokensString, ",")
+	for _, pair = range pairs {
+		kv = strings.Split(pair, ":")
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("invalid token format: %s", pair)
+		}
+		values = strings.Split(kv[1], "/")
+		if len(values) != 2 {
+			return nil, fmt.Errorf("invalid token values format: %s", kv[1])
+		}
+		rateLimit, err = strconv.Atoi(values[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid rate limit value: %s", values[0])
+		}
+		rateInterval, err = strconv.Atoi(values[1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid rate interval value: %s", values[1])
+		}
+		tokens[kv[0]] = Token{
+			RateLimit:    rateLimit,
+			RateInterval: rateInterval,
+		}
 	}
-	value, err := strconv.Atoi(valueStr)
-	if err != nil {
-		return defaultValue
-	}
-	return value
+	return tokens, nil
 }
