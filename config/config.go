@@ -56,27 +56,6 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	// config = &Config{
-	// 	MaxRequestsPerSecondIP:    viper.GetInt("MAX_REQUESTS_PER_SECOND_IP"),
-	// 	MaxRequestsPerSecondToken: viper.GetInt("MAX_REQUESTS_PER_SECOND_TOKEN"),
-	// 	RedisAddress:              viper.GetString("REDIS_ADDRESS"),
-	// 	RedisPassword:             viper.GetString("REDIS_PASSWORD"),
-	// 	WebServerPort:             viper.GetInt("WEB_SERVER_PORT"),
-	// 	Tokens:                    viper.GetString("TOKENS"),
-	// }
-
-	// blockDurationIPStr = viper.GetString("BLOCK_DURATION_IP")
-	// config.BlockDurationIP, err = time.ParseDuration(blockDurationIPStr)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// blockDurationTokenStr = viper.GetString("BLOCK_DURATION_TOKEN")
-	// config.BlockDurationToken, err = time.ParseDuration(blockDurationTokenStr)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	config.TokensMap, err = parseTokens(config.Tokens)
 	if err != nil {
 		return nil, err
