@@ -67,3 +67,26 @@ O sistema possui testes automatizados que validam o funcionamento do rate limite
 ```
 /middleware/middleware_test.go
 ```
+
+## Como Usar
+
+### Execução Local
+
+1.  **Clone o repositório (se aplicável).**
+2.  **Navegue até o diretório do projeto.**
+3.  **Compile o código Go:**
+    ```bash
+    go run ./cmd/ratelimiter/ratelimiter.go
+    ```
+4.  **Testes de requisição**
+    Para testes de requisição por IP, executar o seguinte arquivo em outro terminal:
+    ```bash
+    go run ./test/ip/requestIP.go
+    ```
+
+    Para testes de requisição por token, executar o seguinte arquivo em outro terminal:
+    ```bash
+    go run ./test/token/requestToken.go
+    ```
+
+    
