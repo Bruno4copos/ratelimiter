@@ -74,11 +74,17 @@ O sistema possui testes automatizados que validam o funcionamento do rate limite
 
 1.  **Clone o repositório (se aplicável).**
 2.  **Navegue até o diretório do projeto.**
-3.  **Compile o código Go:**
+3.  **Execute a instância do Redis com Docker.**
+    ```bash
+    docker-compose up -d
+    ```
+4.  **Compile o código Go:**
+   
+   Em outro terminal, execute:
     ```bash
     go run ./cmd/ratelimiter/ratelimiter.go
     ```
-4.  **Testes de requisição**
+5.  **Testes de requisição**
 
     Para testes de requisição por IP, executar o seguinte arquivo em outro terminal:
     ```bash
