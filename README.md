@@ -79,6 +79,7 @@ O sistema possui testes automatizados que validam o funcionamento do rate limite
     go run ./cmd/ratelimiter/ratelimiter.go
     ```
 4.  **Testes de requisição**
+
     Para testes de requisição por IP, executar o seguinte arquivo em outro terminal:
     ```bash
     go run ./test/ip/requestIP.go
