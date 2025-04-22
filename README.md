@@ -79,11 +79,13 @@ O sistema possui testes automatizados que validam o funcionamento do rate limite
     docker-compose up -d
     ```
 4.  **Compile o código Go:**
-   
-   Em outro terminal, execute:
+
+
+    Em outro terminal, execute:
     ```bash
     go run ./cmd/ratelimiter/ratelimiter.go
     ```
+
 5.  **Testes de requisição**
 
     Para testes de requisição por IP, executar o seguinte arquivo em outro terminal:
