@@ -61,13 +61,6 @@ TOKENS=JOAO123:10/1,CARLOS456:30/2
 ## Mecanismo de Persistência
 O rate limiter foi projetado para suportar mecanismos de persistência através do Redis.
 
-## Testes Automatizados
-O sistema possui testes automatizados que validam o funcionamento do rate limiter. O teste principal está localizado no arquivo:
-
-```
-/middleware/middleware_test.go
-```
-
 ## Como Usar
 
 ### Execução Local
